@@ -81,7 +81,7 @@ def boolean_search(query:str, inverted_index:dict):
 
     Note: data MUST be a pandas dataframe to use to_json() needed to return output (see variable data_df)
     """
-    # TODO: edit and debug to fit spec and return same format as json_search()
+    # TODO: edit and debug to fit spec and return same output format as json_search()
     res = set()
     if not query:
       print("if not query returns res = ",res)
