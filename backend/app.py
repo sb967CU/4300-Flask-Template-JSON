@@ -76,6 +76,7 @@ def json_search(query):
 
 inverted_index = build_inverted_index(data)
 filler_words = build_filler_words(data)
+
 def boolean_search(query:str, inverted_index:dict):
     """
     returns: JSON of gyms filtered by boolean search on their reviews
@@ -83,15 +84,18 @@ def boolean_search(query:str, inverted_index:dict):
     Note: data MUST be a pandas dataframe to use to_json() needed to return output (see variable data_df)
     """
     # TODO: edit and debug to fit spec and return same output format as json_search()
-    query_tokens = TreebankWordTokenizer().tokenize(query.lower())
-    filtered_tokens = [token for token in query_tokens if token not in filler_words]
+    filtered_tokens = TreebankWordTokenizer().tokenize(query.lower())
+    # filtered_tokens = [token for token in query_tokens if token not in filler_words]
 
     if not filtered_tokens:
       return json.dumps([]) # convert to json
 
-    gym_ids=inverted_index.get(filtered_tokens[0], set())
-    for token in filtered_tokens:
-        gym_ids &= inverted_index.get(token, set())
+    gym_ids=set()
+    gym_ids.update(inverted_index.get(filtered_tokens[0], set()))
+    for token in filtered_tokens[1:]:
+        gym_ids.intersection_update(inverted_index.get(token, set())) 
+
+    print(len(filtered_tokens))
     merged_df = data_df
     matching_gyms = merged_df[merged_df['id'].isin(gym_ids)]
     result = matching_gyms[['name', 'description', 'rating', 'website']].to_json(orient='records')
