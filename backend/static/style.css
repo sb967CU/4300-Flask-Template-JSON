@@ -66,15 +66,36 @@ body {
     color: #17404c;
 }
 
-.episode-title{
+a {
+    text-decoration: none;
+    color: #17404c;
+}
+
+.gym-tile {
+    border-width:1px;
+    border-style:solid;
+    border-color: #8C4A2D;
+    border-radius: 25px;
+    margin-bottom: 25px;
+    padding-left: 30px;
+    padding-right: 30px;
+}
+.gym-tile:hover {
+    cursor: pointer;
+    background-color: #8c492d0b;
+    box-shadow: 0px 0px 15px 1px #8C4A2D;
+    
+  }
+
+.entry-name{
     font-family: 'Kanit', sans-serif;
     color: #8C4A2D;
 }
 
-.episode-desc, .episode-rating{
+.entry-desc, .entry-rating{
     font-family: 'Montserrat', sans-serif;
 }
 
-.episode-divider{
+.entry-divider{
     color:#8C4A2D;
 }

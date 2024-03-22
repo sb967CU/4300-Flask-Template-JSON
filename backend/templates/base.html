@@ -4,7 +4,9 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Kanit&family=Montserrat&family=Open+Sans:wght@500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Kanit&family=Montserrat&family=Open+Sans:wght@500&display=swap"
+    rel="stylesheet">
+
 <body>
     <div class="full-body-container">
         <div class="top-text">
@@ -12,11 +14,11 @@
             <!-- blue color used for title text: #17404c -->
             <div class="titleicon">
                 <img src="{{ url_for('static', filename='images/gym_title_blue_minspace.png') }}" height="200px" />
-                <img src="{{ url_for('static', filename='images/gym_icon_orng.png') }}" height="250px"/>
+                <img src="{{ url_for('static', filename='images/gym_icon_orng.png') }}" height="250px" />
             </div>
             <div class="input-box" onclick="sendFocus()">
                 <img src="{{ url_for('static', filename='images/search_mag.png') }}" />
-                <input placeholder="Search for a gym that meets your needs" id="filter-text-val" onkeyup="filterText()">
+                <input placeholder="Find your new favorite gym in NYC" id="filter-text-val" onkeyup="filterText()">
             </div>
         </div>
         <div id="answer-box">
@@ -26,33 +28,33 @@
 
     <script>
 
-        function answerBoxTemplate(title,titleDesc,rating){
-            return `<div class=''>
-                <p class="episode-divider">_______________________________________________________________________________________</p>
-                <h3 class='episode-title'>${title}</h3>
-                <p class='episode-rating'>IMDB Rating: ${rating}</p>
-                <p class='episode-desc'>${titleDesc}</p>
-                <p class="episode-divider">_______________________________________________________________________________________</p>
-            </div>`
+        function answerBoxTemplate(name, rating, description, website) { //TODO: add other details
+            return `<a href=${website} target="_blank">
+                <div class='gym-tile'>
+                    <h3 class='entry-name'>${name}</h3>
+                    <p class='entry-rating'>Rating: ${rating}</p>
+                    <p class='entry-desc'>Description: ${description}</p>
+                </div>
+                </a>`
         }
 
-        function sendFocus(){
+        function sendFocus() {
             document.getElementById('filter-text-val').focus()
         }
 
-        function filterText(){
+        function filterText() {
             document.getElementById("answer-box").innerHTML = ""
             console.log(document.getElementById("filter-text-val").value)
-            fetch("/episodes?" + new URLSearchParams({ title: document.getElementById("filter-text-val").value }).toString())
-            .then((response) => response.json())
-            .then((data) => data.forEach(row => {
-                
-                let tempDiv = document.createElement("div")
-                tempDiv.innerHTML = answerBoxTemplate(row.title,row.descr,row.imdb_rating)
-                document.getElementById("answer-box").appendChild(tempDiv)
-            }));
+            fetch("/gyms?" + new URLSearchParams({ query: document.getElementById("filter-text-val").value }).toString())
+                .then((response) => response.json())
+                .then((data) => data.forEach(row => {
+
+                    let tempDiv = document.createElement("div")
+                    tempDiv.innerHTML = answerBoxTemplate(row.name, row.rating, row.description, row.website) //TODO: add other details
+                    document.getElementById("answer-box").appendChild(tempDiv)
+                }));
 
         }
-            
+
     </script>
 </body>
