@@ -7,7 +7,7 @@ def build_filler_words(data):
     s = []
     for gym_id, gym_info in data.items():
         s += TreebankWordTokenizer().tokenize(f"{gym_info['name']} {gym_info['description']} {' '.join(gym_info['reviews'])}")
-    for word,count in Counter(s):
+    for word,count in Counter(s).items():
       if count > 10 and count > 0.015 * len(s):
         res.add(word)
     return res
