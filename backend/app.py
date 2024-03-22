@@ -95,7 +95,6 @@ def boolean_search(query:str, inverted_index:dict):
     for token in filtered_tokens[1:]:
         gym_ids.intersection_update(inverted_index.get(token, set())) 
 
-    print(len(filtered_tokens))
     merged_df = data_df
     matching_gyms = merged_df[merged_df['id'].isin(gym_ids)]
     result = matching_gyms[['name', 'description', 'rating', 'website']].to_json(orient='records')
