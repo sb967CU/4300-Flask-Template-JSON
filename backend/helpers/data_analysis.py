@@ -1,7 +1,7 @@
 from collections import defaultdict, Counter
 from nltk.tokenize import TreebankWordTokenizer
 
-def filler_words(data):
+def build_filler_words(data):
     res = set()
     
     for gym_id, gym_info in data.items():

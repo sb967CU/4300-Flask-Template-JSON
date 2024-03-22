@@ -8,7 +8,7 @@ import pandas as pd
 ###########################################################
 ###########################################################
 # TODO: fix boolean search attempt:
-from helpers.data_analysis import filler_words, build_inverted_index
+from helpers.data_analysis import build_filler_words, build_inverted_index
 from collections import defaultdict, Counter
 from nltk.tokenize import TreebankWordTokenizer
 ###########################################################
@@ -29,7 +29,8 @@ json_file_path = os.path.join(current_directory, 'init.json')
 with open(json_file_path, 'r') as file:
     data = json.load(file) # nested dict same format as json
 
-    gname, gphone, gweb, grat, gdesc, gaddr, gnumrev, grev = zip(*((
+    gid, gname, gphone, gweb, grat, gdesc, gaddr, gnumrev, grev = zip(*((
+        gym_id,
         gym['name'],
         gym['phone'],
         gym['website'],
@@ -38,9 +39,10 @@ with open(json_file_path, 'r') as file:
         gym['address'],
         gym['num_online_reviews'],
         gym['reviews']
-    ) for gym in data.values()))
+    ) for gym_id,gym in data.items()))
 
     data_df =  pd.DataFrame({
+        'id': gid,
         'name': gname,
         'phone': gphone,
         'website': gweb,
@@ -68,13 +70,12 @@ def json_search(query):
     return matches_filtered_json
 
 
-
 ###########################################################
 ###########################################################
 # TODO: fix boolean search attempt:
 
 inverted_index = build_inverted_index(data)
-
+filler_words = build_filler_words(data)
 def boolean_search(query:str, inverted_index:dict):
     """
     returns: JSON of gyms filtered by boolean search on their reviews
@@ -82,22 +83,19 @@ def boolean_search(query:str, inverted_index:dict):
     Note: data MUST be a pandas dataframe to use to_json() needed to return output (see variable data_df)
     """
     # TODO: edit and debug to fit spec and return same output format as json_search()
-    res = set()
-    if not query:
-      print("if not query returns res = ",res)
-      return list(res)
-    full_query_tokens = set(TreebankWordTokenizer().tokenize(query))
+    query_tokens = TreebankWordTokenizer().tokenize(query.lower())
+    filtered_tokens = [token for token in query_tokens if token not in filler_words]
 
-    query_tokens=[]
-    for token in full_query_tokens:
-      if token not in filler_words(data):
-        query_tokens.append(token)
+    if not filtered_tokens:
+      return json.dumps([]) # convert to json
 
-    res=inverted_index.get(query_tokens[0])
-    for token in query_tokens:
-        res = res.intersection(inverted_index.get(token, set()))
-    print("typed query returns res = ",res)
-    return list(res)
+    gym_ids=inverted_index.get(filtered_tokens[0], set())
+    for token in filtered_tokens:
+        gym_ids &= inverted_index.get(token, set())
+    merged_df = data_df
+    matching_gyms = merged_df[merged_df['id'].isin(gym_ids)]
+    result = matching_gyms[['name', 'description', 'rating', 'website']].to_json(orient='records')
+    return result
 ###########################################################
 ###########################################################
 
@@ -109,11 +107,11 @@ def boolean_search(query:str, inverted_index:dict):
 def home():
     return render_template('base.html',title="sample html")
 
-# TMP version:
-@app.route("/gyms")
-def gym_search():
-   text = request.args.get("query")
-   return json_search(text)
+# # TMP version:
+# @app.route("/gyms")
+# def gym_search():
+#    text = request.args.get("query")
+#    return json_search(text)
 
 
 ###########################################################
@@ -121,10 +119,10 @@ def gym_search():
 # TODO: fix boolean search attempt:
 # uncomment and fix, (comment out the TMP version):
 
-# @app.route("/gyms")
-# def gym_search():
-#    text = request.args.get("query")
-#    return boolean_search(text, inverted_index).to_json(orient='records')
+@app.route("/gyms")
+def gym_search():
+   text = request.args.get("query")
+   return boolean_search(text, inverted_index)
 
 ###########################################################
 ###########################################################
