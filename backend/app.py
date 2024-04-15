@@ -73,26 +73,26 @@ CORS(app)
 
 
 # p03 boolean search fxn
-#inverted_index = build_inverted_index(data)
-#filler_words = build_filler_words(data)
-#
-#def boolean_search(query:str, inverted_index:dict):
+# inverted_index = build_inverted_index(data)
+# filler_words = build_filler_words(data)
+# #
+# def boolean_search(query:str, inverted_index:dict):
 #    """
 #    returns: JSON of gyms filtered by boolean search on their reviews
-#
+
 #    Note: data MUST be a pandas dataframe to use to_json() needed to return output (see variable data_df)
 #    """
 #    filtered_tokens = TreebankWordTokenizer().tokenize(query.lower())
 #    # filtered_tokens = [token for token in query_tokens if token not in filler_words]
-#
+
 #    if not filtered_tokens:
 #      return json.dumps([]) # convert to json
-#
+
 #    gym_ids=set()
 #    gym_ids.update(inverted_index.get(filtered_tokens[0], set()))
 #    for token in filtered_tokens[1:]:
 #        gym_ids.intersection_update(inverted_index.get(token, set())) 
-#
+
 #    merged_df = data_df
 #    matching_gyms = merged_df[merged_df['id'].isin(gym_ids)]
 #    result = matching_gyms[['name', 'description', 'rating', 'website']].to_json(orient='records')
@@ -108,40 +108,61 @@ def p04_search(query:str, k=5):
 
     Note: data MUST be a pandas dataframe to use to_json() needed to return output (see variable data_df)
     """
-    # build TD matrix
-    vectorizer = TfidfVectorizer(stop_words='english',norm='l2',max_df=0.985,min_df=1) # arbitrary max_df
-    td_matrix = vectorizer.fit_transform(
-        [f"{data_df['name'][i]} {data_df['description'][i]} {' '.join(data_df['reviews'][i])}" for i in data_df.index]
-        )
-    td_matrix_norm = normalize(TDMatrix.toarray())
+    # # build TD matrix
+    # vectorizer = TfidfVectorizer(stop_words='english',norm='l2',max_df=0.985,min_df=1) # arbitrary max_df
+    # td_matrix = vectorizer.fit_transform(
+    #     [f"{data_df['name'][i]} {data_df['description'][i]} {' '.join(data_df['reviews'][i])}" for i in data_df.index]
+    #     )
+    # td_matrix_norm = normalize(td_matrix.toarray())
 
 
-    # SVD with large k=100, just for the sake of getting many sorted singular values (aka importances)
-    #      U       sigma       V^T
-    docs_compressed, s, words_compressed = svds(td_matrix, k=100)
-    words_compressed = words_compressed.transpose()
-    docs_compressed_normed = normalize(docs_compressed)
-    word_to_index = vectorizer.vocabulary_
-    index_to_word = {i:t for t,i in word_to_index.items()}
-    words_compressed_normed = normalize(words_compressed, axis = 1) # use normalized version??
+    # # SVD with large k=100, just for the sake of getting many sorted singular values (aka importances)
+    # #      U       sigma       V^T
+    # docs_compressed, s, words_compressed = svds(td_matrix, k=40)
+    # words_compressed = words_compressed.transpose()
+    # docs_compressed_normed = normalize(docs_compressed)
+    # word_to_index = vectorizer.vocabulary_
+    # index_to_word = {i:t for t,i in word_to_index.items()}
+    # words_compressed_normed = normalize(words_compressed, axis = 1) # use normalized version??
 
 
-    # cosine similarity using svd (equivalent to "closest_projects" fxn from lecture code, for reference)
-    tmp_query_array = vectorizer.transform([query]).toarray()
-    query_vect = normalize(np.dot(tmp_query_array, words_compressed_normed)).squeeze()
+    # # cosine similarity using svd (equivalent to "closest_projects" fxn from lecture code, for reference)
+    # tmp_query_array = vectorizer.transform([query]).toarray()
+    # query_vect = normalize(np.dot(tmp_query_array, words_compressed_normed)).squeeze()
 
-    sims = docs_compressed_normed.dot(query_vect)
-    asort = np.argsort(-sims)[:k+1]
-    cossim_inds = [i for i in asort[1:]]
+    # sims = docs_compressed_normed.dot(query_vect)
+    # asort = np.argsort(-sims)[:k+1]
+    # cossim_inds = [i for i in asort[1:]]
 
 
-    # return results
-    gym_ids = cossim_inds
-    merged_df = data_df
-    matching_gyms = merged_df[merged_df['id'].isin(gym_ids)]
-    result = matching_gyms[['name', 'description', 'rating', 'website']].to_json(orient='records')
-    return result
+    # # return results
+    # gym_ids = cossim_inds
+    # merged_df = data_df
+    # matching_gyms = merged_df[merged_df['id'].isin(gym_ids)]
+    # result = matching_gyms[['name', 'description', 'rating', 'website']].to_json(orient='records')
+    # return result
+    vectorizer = TfidfVectorizer(stop_words='english', norm='l2', max_df=0.985, min_df=1)
+    documents = data_df.apply(lambda x: f"{x['name']} {x['description']} {' '.join(x['reviews'])}", axis=1)
+    td_matrix = vectorizer.fit_transform(documents)
 
+    # Apply SVD for dimensionality reduction
+    u, s, vt = svds(td_matrix, k=50)
+    vt = vt.T
+    doc_representations = normalize(u)
+
+    # Prepare query vector
+    query_vector = vectorizer.transform([query])
+    query_rep = normalize(query_vector @ vt)
+
+    # Calculate cosine similarity
+    similarities = doc_representations.dot(query_rep.T).ravel()
+    top_indices = np.argsort(-similarities)[:k]
+
+    # Retrieve matching gym data
+    matching_gyms = data_df.iloc[top_indices]
+    result_json = matching_gyms[['id', 'name', 'description', 'rating', 'website']].to_json(orient='records')
+
+    return result_json
 
 
 
@@ -158,8 +179,8 @@ def home():
 
 
 # p03 boolean search:
-#@app.route("/gyms")
-#def gym_search():
+# @app.route("/gyms")
+# def gym_search():
 #   text = request.args.get("query")
 #   return boolean_search(text, inverted_index)
 
