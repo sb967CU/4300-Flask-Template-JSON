@@ -30,12 +30,22 @@
         let debounceTimeout;
         const debounceInterval = 300; // milliseconds
     
-        function answerBoxTemplate(name, rating, description, website) { //TODO: add other details
+        function answerBoxTemplate(name, rating, description, website, similarity) { //TODO: add other details
             return `<a href=${website} target="_blank">
                 <div class='gym-tile'>
-                    <h3 class='entry-name'>${name}</h3>
-                    <p class='entry-rating'>Rating: ${rating}</p>
-                    <p class='entry-desc'>Description: ${description}</p>
+                    <div class='entry-header'>
+                        <h3 class='entry-name'>${name}</h3>
+                        <p class='entry-rating'>Similarity: ${Math.round(similarity*100)}%</p>
+                    </div>
+                    <div class = rating-container>
+                        <span class='rating-number'>${rating}   </span>
+                        <div class="rating-stars">
+                            <span class="stars-background">★★★★★</span>
+                            <span class="stars-foreground" style="width: ${(rating / 5) * 100}%;">★★★★★</span>
+                        </div>
+                        
+                    </div>
+                    <p class='entry-desc'>${description}</p>
                 </div>
             </a>`
         }
@@ -58,7 +68,7 @@
                     .then((data) => {
                         data.forEach(row => {
                             let tempDiv = document.createElement("div");
-                            tempDiv.innerHTML = answerBoxTemplate(row.name, row.rating, row.description, row.website);
+                            tempDiv.innerHTML = answerBoxTemplate(row.name, row.rating, row.description, row.website, row.similarity);
                             answerBox.appendChild(tempDiv);
                         });
                     });
