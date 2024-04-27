@@ -142,7 +142,7 @@ def p04_search(query:str, k=5):
     # result = matching_gyms[['name', 'description', 'rating', 'website']].to_json(orient='records')
     # return result
     vectorizer = TfidfVectorizer(stop_words='english', norm='l2', max_df=0.985, min_df=1)
-    documents = data_df.apply(lambda x: f"{x['name']} {x['description']} {' '.join(x['reviews'])}", axis=1)
+    documents = data_df.apply(lambda x: " ".join([x['name']] * 2 + [x['description']] * 2 + x['reviews']), axis=1)
     td_matrix = vectorizer.fit_transform(documents)
 
     # Apply SVD for dimensionality reduction
