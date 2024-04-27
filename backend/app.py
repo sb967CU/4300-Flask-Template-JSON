@@ -159,9 +159,13 @@ def p04_search(query:str, k=5):
     top_indices = np.argsort(-similarities)[:k]
 
     # Retrieve matching gym data
-    matching_gyms = data_df.iloc[top_indices]
-    result_json = matching_gyms[['id', 'name', 'description', 'rating', 'website']].to_json(orient='records')
+    matching_gyms = data_df.iloc[top_indices].copy()
+    matching_gyms['similarity'] = similarities[top_indices]
 
+    # Output
+    #print("matching_gyms:", matching_gyms[['name', 'similarity']])
+    result_json = matching_gyms[['id', 'name', 'description', 'rating', 'website', 'similarity']].to_json(orient='records')
+    print(matching_gyms[['name']])
     return result_json
 
 
@@ -188,7 +192,9 @@ def home():
 @app.route("/gyms")
 def gym_search():
    text = request.args.get("query")
-   return p04_search(text)
+   results = p04_search(text)
+   
+   return results
 
 
 if 'DB_NAME' not in os.environ:
