@@ -86,10 +86,17 @@ a {
     box-shadow: 0px 0px 15px 1px #8C4A2D;
     
   }
-
+.entry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
 .entry-name{
     font-family: 'Kanit', sans-serif;
     color: #8C4A2D;
+    flex: 1;
+    stroke: black;
+    stroke-width: 1;
 }
 
 .entry-desc, .entry-rating{
@@ -98,4 +105,53 @@ a {
 
 .entry-divider{
     color:#8C4A2D;
+}
+
+/* 5 star rating */
+.rating-container {
+    display: flex;
+    align-items: center;
+    font-size: 24px;
+}
+
+.rating-stars {
+    unicode-bidi: bidi-override;
+    color: #c5c5c5;
+    display: inline-flex;
+    white-space: nowrap;
+    position: relative;
+    height: 25px;
+    line-height: 25px;
+    margin-right: 10px;
+    width:125px;
+}
+
+.rating-number {
+    font-family: 'Montserrat', sans-serif;
+    display: inline-flex;
+    align-items: center;
+    height: 25px;
+    line-height: 25px;
+    font-size:20px;
+    padding-right: 5px;
+}
+
+.rating-stars .stars-background {
+    display: block;
+    content: "★★★★★";
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0.5;
+}
+
+.rating-stars .stars-foreground {
+    display: block;
+    content: "★★★★★";
+    position: absolute;
+    top: 0;
+    left: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    color: rgb(219, 187, 4);
 }
