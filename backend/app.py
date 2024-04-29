@@ -58,6 +58,15 @@ with open(json_file_path, 'r') as file:
 app = Flask(__name__)
 CORS(app)
 
+vectorizer = TfidfVectorizer(stop_words='english', norm='l2', max_df=0.985, min_df=1)
+documents = data_df.apply(lambda x: f"{x['name']} {x['description']} {' '.join(x['reviews'])}", axis=1)
+td_matrix = vectorizer.fit_transform(documents)
+
+# Apply SVD for dimensionality reduction
+u, s, vt = svds(td_matrix, k=50)
+vt = vt.T
+doc_representations = normalize(u)
+
 
 # p03 TMP version, sample search using json with pandas
 #def json_search(query):
@@ -98,6 +107,13 @@ CORS(app)
 #    result = matching_gyms[['name', 'description', 'rating', 'website']].to_json(orient='records')
 #    return result
 
+
+def cosine_similarity(vec1, vec2):
+    dot_product = np.dot(vec1, vec2.T)
+    norm_vec1 = np.linalg.norm(vec1)
+    norm_vec2 = np.linalg.norm(vec2)
+    similarity = dot_product / (norm_vec1 * norm_vec2)
+    return similarity
 
 
 
@@ -141,14 +157,7 @@ def p04_search(query:str, k=5):
     # matching_gyms = merged_df[merged_df['id'].isin(gym_ids)]
     # result = matching_gyms[['name', 'description', 'rating', 'website']].to_json(orient='records')
     # return result
-    vectorizer = TfidfVectorizer(stop_words='english', norm='l2', max_df=0.985, min_df=1)
-    documents = data_df.apply(lambda x: f"{x['name']} {x['description']} {' '.join(x['reviews'])}", axis=1)
-    td_matrix = vectorizer.fit_transform(documents)
 
-    # Apply SVD for dimensionality reduction
-    u, s, vt = svds(td_matrix, k=50)
-    vt = vt.T
-    doc_representations = normalize(u)
 
     # Prepare query vector
     query_vector = vectorizer.transform([query])
@@ -157,11 +166,41 @@ def p04_search(query:str, k=5):
     # Calculate cosine similarity
     similarities = doc_representations.dot(query_rep.T).ravel()
     top_indices = np.argsort(-similarities)[:k]
+    sim_sorted = np.sort(-similarities)[:k]
 
     # Retrieve matching gym data
     matching_gyms = data_df.iloc[top_indices]
-    result_json = matching_gyms[['id', 'name', 'description', 'rating', 'website']].to_json(orient='records')
-
+    
+    
+    # # # TODO: Finding the relevant reviews for each GYM
+    relevant_reviews = []
+    for index, gym in matching_gyms.iterrows():
+        gym_id = gym['id']
+        gym_representation = doc_representations[data_df[data_df['id']==gym_id].index[0]]
+        
+        # Process each review separately
+        review_reps = []
+        for review in gym['reviews']:
+            review_vector = vectorizer.transform([review])
+            review_representation = normalize(review_vector @ vt)
+            review_reps.append(review_representation)
+        
+        review_reps = np.array(review_reps)
+        
+        review_similarities = review_reps.dot(query_rep.T).ravel()
+        most_relevant_review_index = np.argmax(review_similarities)
+        most_relevant_review = gym['reviews'][most_relevant_review_index]
+        relevant_reviews.append(most_relevant_review)
+    
+    matching_gyms = matching_gyms.copy()
+    
+    matching_gyms['relevant_review'] = relevant_reviews
+    matching_gyms['similiarity'] = sim_sorted
+    # #//////////////////////////////////////////
+    
+    result_json = matching_gyms[['id', 'name', 'description', 'rating', 'website', 'relevant_review', 'similiarity']].to_json(orient='records')
+    
+    # result_json = matching_gyms[['id', 'name', 'description', 'rating', 'website']].to_json(orient='records')
     return result_json
 
 
@@ -187,8 +226,10 @@ def home():
 # p04 cos sim + svd search:
 @app.route("/gyms")
 def gym_search():
-   text = request.args.get("query")
-   return p04_search(text)
+    text = request.args.get("query")
+    results = p04_search(text) 
+    return results
+
 
 
 if 'DB_NAME' not in os.environ:

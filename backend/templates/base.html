@@ -27,34 +27,49 @@
     </div>
 
     <script>
-
-        function answerBoxTemplate(name, rating, description, website) { //TODO: add other details
+        let debounceTimeout;
+        const debounceInterval = 300; // milliseconds
+    
+        function answerBoxTemplate(name, rating, description, website, relevant, similarity) { //TODO: add other details
             return `<a href=${website} target="_blank">
                 <div class='gym-tile'>
-                    <h3 class='entry-name'>${name}</h3>
-                    <p class='entry-rating'>Rating: ${rating}</p>
-                    <p class='entry-desc'>Description: ${description}</p>
+                    <div class='entry-header'>
+                        <h3 class='entry-name'>${name}</h3>
+                        <p class='entry-rating'>Similarity: ${-1 * Math.round(similarity*100)}%</p>
+                    </div>
+                    <div class = rating-container>
+                        <span class='rating-number'>Rating: ${rating}   </span>
+                    </div>
+                    <p class='entry-desc'> Description : ${description}</p>
+                    <p class='entry-desc'> Relevant Review: ${relevant}</p>
                 </div>
-                </a>`
+            </a>`
         }
-
+    
         function sendFocus() {
             document.getElementById('filter-text-val').focus()
         }
-
+    
         function filterText() {
-            document.getElementById("answer-box").innerHTML = ""
-            console.log(document.getElementById("filter-text-val").value)
-            fetch("/gyms?" + new URLSearchParams({ query: document.getElementById("filter-text-val").value }).toString())
-                .then((response) => response.json())
-                .then((data) => data.forEach(row => {
-
-                    let tempDiv = document.createElement("div")
-                    tempDiv.innerHTML = answerBoxTemplate(row.name, row.rating, row.description, row.website) //TODO: add other details
-                    document.getElementById("answer-box").appendChild(tempDiv)
-                }));
-
+            clearTimeout(debounceTimeout);
+            debounceTimeout = setTimeout(() => {
+                const answerBox = document.getElementById("answer-box");
+                answerBox.innerHTML = ""; // Clear previous results
+                const searchText = document.getElementById("filter-text-val").value;
+                console.log(searchText);
+                fetch("/gyms?" + new URLSearchParams({ query: searchText }), {
+                    cache: 'no-store' // Prevents caching of AJAX requests
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        data.forEach(row => {
+                            let tempDiv = document.createElement("div");
+                            tempDiv.innerHTML = answerBoxTemplate(row.name, row.rating, row.description, row.website, row.relevant_review, row.similiarity);
+                            answerBox.appendChild(tempDiv);
+                        });
+                    });
+            }, debounceInterval);
         }
-
     </script>
+    
 </body>
